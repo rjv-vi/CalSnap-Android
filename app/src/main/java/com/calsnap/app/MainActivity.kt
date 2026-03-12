@@ -4,10 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,7 +45,6 @@ class MainActivity : ComponentActivity() {
             val appVm: AppViewModel = hiltViewModel()
             val startDest by appVm.startDestination.collectAsStateWithLifecycle()
 
-            // Держим сплэш пока не определили стартовый экран
             splashScreen.setKeepOnScreenCondition { startDest == null }
 
             CalSnapTheme {
@@ -43,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
 
                     NavHost(
-                        navController    = navController,
+                        navController = navController,
                         startDestination = dest
                     ) {
                         composable(Screen.Onboarding.route) {
@@ -57,8 +66,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(Screen.Home.route) {
-                            // TODO: HomeScreen — следующий этап
-                            PlaceholderScreen("🏠 Главный экран\n\nОнбординг завершён! Следующий этап разработки.")
+                            PlaceholderScreen("🏠 Главный экран\n\nОнбординг завершён!")
                         }
                     }
                 }
@@ -67,20 +75,19 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Временный плейсхолдер пока не написан полноценный экран
 @Composable
 fun PlaceholderScreen(text: String) {
-    androidx.compose.foundation.layout.Box(
-        modifier = androidx.compose.ui.Modifier
+    Box(
+        modifier = Modifier
             .fillMaxSize()
-            .background(androidx.compose.material3.MaterialTheme.colorScheme.background),
-        contentAlignment = androidx.compose.ui.Alignment.Center
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
     ) {
-        androidx.compose.material3.Text(
-            text      = text,
-            style     = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
-            color     = androidx.compose.material3.MaterialTheme.colorScheme.onBackground,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -103,10 +110,4 @@ class AppViewModel @Inject constructor(
             _startDestination.value = dest
         }
     }
-}
-
-// Extension — нужен для collectAsStateWithLifecycle в Activity
-@Composable
-fun <T> kotlinx.coroutines.flow.StateFlow<T>.collectAsStateWithLifecycle(): State<T> {
-    return androidx.lifecycle.compose.collectAsStateWithLifecycle()
 }

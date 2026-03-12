@@ -1,32 +1,70 @@
 package com.calsnap.app.ui.onboarding
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.calsnap.app.domain.model.*
+import com.calsnap.app.domain.model.ActivityLevel
+import com.calsnap.app.domain.model.DietPref
+import com.calsnap.app.domain.model.Gender
+import com.calsnap.app.domain.model.Goal
 import com.calsnap.app.ui.theme.Streak
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -44,13 +82,12 @@ fun OnboardingScreen(
             .background(MaterialTheme.colorScheme.background)
             .systemBarsPadding()
     ) {
-        // ── Progress bar ─────────────────────────────────────────────
         LinearProgressIndicator(
             progress = { (state.step + 1) / 6f },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(3.dp),
-            color    = Streak,
+            color = Streak,
             trackColor = MaterialTheme.colorScheme.outline,
         )
 
@@ -59,7 +96,6 @@ fun OnboardingScreen(
                 .fillMaxSize()
                 .padding(top = 3.dp)
         ) {
-            // ── Back button ──────────────────────────────────────────
             if (state.step > 0) {
                 IconButton(
                     onClick = { vm.prevStep() },
@@ -75,21 +111,21 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(56.dp))
             }
 
-            // ── Step content (animated slide) ─────────────────────
             AnimatedContent(
                 targetState = state.step,
                 transitionSpec = {
                     if (targetState > initialState) {
                         slideInHorizontally { it } + fadeIn() togetherWith
-                        slideOutHorizontally { -it } + fadeOut()
+                                slideOutHorizontally { -it } + fadeOut()
                     } else {
                         slideInHorizontally { -it } + fadeIn() togetherWith
-                        slideOutHorizontally { it } + fadeOut()
+                                slideOutHorizontally { it } + fadeOut()
                     }
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                label = "onboarding_step"
             ) { step ->
                 when (step) {
                     0 -> StepName(state, vm, onNext = { vm.nextStep() })
@@ -97,12 +133,11 @@ fun OnboardingScreen(
                     2 -> StepHeightWeight(state, vm, onNext = { vm.nextStep() })
                     3 -> StepActivity(state, vm, onNext = { vm.nextStep() })
                     4 -> StepGoal(state, vm, onNext = { vm.nextStep() })
-                    5 -> StepPreferences(state, vm, onFinish = { vm.finish(onFinished) })
+                    else -> StepPreferences(state, vm, onFinish = { vm.finish(onFinished) })
                 }
             }
         }
 
-        // ── Loading overlay ──────────────────────────────────────────
         if (state.isFinishing) {
             Box(
                 modifier = Modifier
@@ -116,9 +151,6 @@ fun OnboardingScreen(
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 0 — Имя
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepName(
     state: OnboardingState,
@@ -128,27 +160,27 @@ private fun StepName(
     val focus = LocalFocusManager.current
 
     StepScaffold(
-        emoji   = "👋",
-        title   = "Как тебя зовут?",
+        emoji = "👋",
+        title = "Как тебя зовут?",
         subtitle = "Это поможет персонализировать CalSnap под тебя",
-        onNext  = onNext
+        onNext = onNext
     ) {
         OutlinedTextField(
-            value         = state.name,
+            value = state.name,
             onValueChange = { vm.setName(it) },
-            placeholder   = { Text("Твоё имя") },
-            singleLine    = true,
-            isError       = state.error != null,
+            placeholder = { Text("Твоё имя") },
+            singleLine = true,
+            isError = state.error != null,
             supportingText = state.error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Words,
-                imeAction      = ImeAction.Done
+                imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); onNext() }),
-            shape  = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Streak,
-                cursorColor        = Streak
+                cursorColor = Streak
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,9 +189,6 @@ private fun StepName(
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 1 — Пол + Дата рождения
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepGenderDob(
     state: OnboardingState,
@@ -167,10 +196,10 @@ private fun StepGenderDob(
     onNext: () -> Unit
 ) {
     StepScaffold(
-        emoji    = "🧬",
-        title    = "Расскажи о себе",
+        emoji = "🧬",
+        title = "Расскажи о себе",
         subtitle = "Нужно для точного расчёта калорий",
-        onNext   = onNext
+        onNext = onNext
     ) {
         Column(
             modifier = Modifier
@@ -178,7 +207,6 @@ private fun StepGenderDob(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Пол
             Text(
                 "Пол",
                 style = MaterialTheme.typography.labelLarge,
@@ -188,65 +216,62 @@ private fun StepGenderDob(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Gender.values().forEach { gender ->
+                Gender.entries.forEach { gender ->
                     SelectCard(
-                        label    = if (gender == Gender.MALE) "👨 Мужской" else "👩 Женский",
+                        label = if (gender == Gender.MALE) "👨 Мужской" else "👩 Женский",
                         selected = state.gender == gender,
                         modifier = Modifier.weight(1f),
-                        onClick  = { vm.setGender(gender) }
+                        onClick = { vm.setGender(gender) }
                     )
                 }
             }
 
-            // Дата рождения
             Text(
                 "Дата рождения",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            // Простой ввод года — можно заменить на DatePicker
-            var year  by remember { mutableStateOf("") }
+            var year by remember { mutableStateOf("") }
             var month by remember { mutableStateOf("") }
-            var day   by remember { mutableStateOf("") }
+            var day by remember { mutableStateOf("") }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value         = day,
+                    value = day,
                     onValueChange = { if (it.length <= 2) day = it.filter { c -> c.isDigit() } },
-                    placeholder   = { Text("ДД") },
-                    singleLine    = true,
+                    placeholder = { Text("ДД") },
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    shape  = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
-                    value         = month,
+                    value = month,
                     onValueChange = { if (it.length <= 2) month = it.filter { c -> c.isDigit() } },
-                    placeholder   = { Text("ММ") },
-                    singleLine    = true,
+                    placeholder = { Text("ММ") },
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    shape  = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
                     modifier = Modifier.weight(1f)
                 )
                 OutlinedTextField(
-                    value         = year,
+                    value = year,
                     onValueChange = { if (it.length <= 4) year = it.filter { c -> c.isDigit() } },
-                    placeholder   = { Text("ГГГГ") },
-                    singleLine    = true,
+                    placeholder = { Text("ГГГГ") },
+                    singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    shape  = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
                     modifier = Modifier.weight(2f)
                 )
             }
 
-            // Обновляем dob при каждом изменении
             LaunchedEffect(day, month, year) {
                 if (day.length == 2 && month.length == 2 && year.length == 4) {
                     runCatching {
@@ -263,9 +288,6 @@ private fun StepGenderDob(
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 2 — Рост + Вес
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepHeightWeight(
     state: OnboardingState,
@@ -273,10 +295,10 @@ private fun StepHeightWeight(
     onNext: () -> Unit
 ) {
     StepScaffold(
-        emoji    = "📏",
-        title    = "Рост и вес",
+        emoji = "📏",
+        title = "Рост и вес",
         subtitle = "Используется для расчёта BMR по формуле Миффлина-Сент-Жеора",
-        onNext   = onNext
+        onNext = onNext
     ) {
         Column(
             modifier = Modifier
@@ -285,28 +307,25 @@ private fun StepHeightWeight(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             NumberSlider(
-                label  = "Рост",
-                value  = state.heightCm,
-                unit   = "см",
-                range  = 140f..220f,
-                steps  = 79,
+                label = "Рост",
+                value = state.heightCm,
+                unit = "см",
+                range = 140f..220f,
+                steps = 79,
                 onValueChange = { vm.setHeight(it) }
             )
             NumberSlider(
-                label  = "Вес",
-                value  = state.weightKg,
-                unit   = "кг",
-                range  = 40f..200f,
-                steps  = 159,
+                label = "Вес",
+                value = state.weightKg,
+                unit = "кг",
+                range = 40f..200f,
+                steps = 159,
                 onValueChange = { vm.setWeight(it) }
             )
         }
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 3 — Активность
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepActivity(
     state: OnboardingState,
@@ -314,10 +333,10 @@ private fun StepActivity(
     onNext: () -> Unit
 ) {
     StepScaffold(
-        emoji    = "🏃",
-        title    = "Уровень активности",
+        emoji = "🏃",
+        title = "Уровень активности",
         subtitle = "Выбери тот, который лучше всего описывает твой обычный день",
-        onNext   = onNext
+        onNext = onNext
     ) {
         Column(
             modifier = Modifier
@@ -335,21 +354,18 @@ private fun StepActivity(
             )
             val emojis = listOf("🪑", "🚶", "🏋️", "🚴", "🔥")
 
-            ActivityLevel.values().forEachIndexed { i, level ->
+            ActivityLevel.entries.forEachIndexed { i, level ->
                 SelectCard(
-                    label       = "${emojis[i]} ${level.label}",
+                    label = "${emojis[i]} ${level.label}",
                     description = descriptions[i],
-                    selected    = state.activityLevel == level,
-                    onClick     = { vm.setActivityLevel(level) }
+                    selected = state.activityLevel == level,
+                    onClick = { vm.setActivityLevel(level) }
                 )
             }
         }
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 4 — Цель
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepGoal(
     state: OnboardingState,
@@ -357,10 +373,10 @@ private fun StepGoal(
     onNext: () -> Unit
 ) {
     StepScaffold(
-        emoji    = "🎯",
-        title    = "Твоя цель",
+        emoji = "🎯",
+        title = "Твоя цель",
         subtitle = "Мы скорректируем дневную норму калорий",
-        onNext   = onNext
+        onNext = onNext
     ) {
         Column(
             modifier = Modifier
@@ -375,21 +391,18 @@ private fun StepGoal(
                 "Профицит 300 ккал в день"
             )
 
-            Goal.values().forEachIndexed { i, goal ->
+            Goal.entries.forEachIndexed { i, goal ->
                 SelectCard(
-                    label       = "${emojis[i]} ${goal.label}",
+                    label = "${emojis[i]} ${goal.label}",
                     description = descriptions[i],
-                    selected    = state.goal == goal,
-                    onClick     = { vm.setGoal(goal) }
+                    selected = state.goal == goal,
+                    onClick = { vm.setGoal(goal) }
                 )
             }
         }
     }
 }
 
-// ═══════════════════════════════════════════════════════════
-// ШАГ 5 — Предпочтения + Финиш
-// ═══════════════════════════════════════════════════════════
 @Composable
 private fun StepPreferences(
     state: OnboardingState,
@@ -397,11 +410,11 @@ private fun StepPreferences(
     onFinish: () -> Unit
 ) {
     StepScaffold(
-        emoji      = "✅",
-        title      = "Пищевые предпочтения",
-        subtitle   = "Необязательно — AI будет учитывать их при анализе",
-        nextLabel  = "Начать! 🚀",
-        onNext     = onFinish
+        emoji = "✅",
+        title = "Пищевые предпочтения",
+        subtitle = "Необязательно — AI будет учитывать их при анализе",
+        nextLabel = "Начать! 🚀",
+        onNext = onFinish
     ) {
         Column(
             modifier = Modifier
@@ -409,7 +422,9 @@ private fun StepPreferences(
                 .padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            DietPref.values().chunked(2).forEach { row ->
+            val prefs = DietPref.entries
+            val rows = prefs.chunked(2)
+            rows.forEach { row ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -417,26 +432,21 @@ private fun StepPreferences(
                     row.forEach { pref ->
                         FilterChip(
                             selected = pref in state.preferences,
-                            onClick  = { vm.togglePref(pref) },
-                            label    = { Text(pref.label) },
-                            colors   = FilterChipDefaults.filterChipColors(
+                            onClick = { vm.togglePref(pref) },
+                            label = { Text(pref.label) },
+                            colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = Streak.copy(alpha = 0.15f),
-                                selectedLabelColor     = Streak
+                                selectedLabelColor = Streak
                             ),
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    // Пустой spacer если нечётное количество
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
         }
     }
 }
-
-// ═══════════════════════════════════════════════════════════
-// ПЕРЕИСПОЛЬЗУЕМЫЕ КОМПОНЕНТЫ
-// ═══════════════════════════════════════════════════════════
 
 @Composable
 private fun StepScaffold(
@@ -459,7 +469,6 @@ private fun StepScaffold(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header
             Column(
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -477,23 +486,21 @@ private fun StepScaffold(
                     lineHeight = 20.sp
                 )
             }
-
             content()
         }
 
-        // CTA Button
         Button(
-            onClick   = onNext,
-            modifier  = Modifier
+            onClick = onNext,
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
                 .height(56.dp),
-            shape     = RoundedCornerShape(18.dp),
-            colors    = ButtonDefaults.buttonColors(containerColor = Streak)
+            shape = RoundedCornerShape(18.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Streak)
         ) {
             Text(
                 nextLabel,
-                style     = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -509,14 +516,14 @@ private fun SelectCard(
     description: String? = null
 ) {
     val borderColor = if (selected) Streak else MaterialTheme.colorScheme.outline
-    val bgColor     = if (selected) Streak.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+    val bgColor = if (selected) Streak.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
 
     Surface(
-        onClick   = onClick,
-        modifier  = modifier.fillMaxWidth(),
-        shape     = RoundedCornerShape(16.dp),
-        color     = bgColor,
-        border    = BorderStroke(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = bgColor,
+        border = BorderStroke(
             width = if (selected) 2.dp else 1.dp,
             color = borderColor
         ),
@@ -530,8 +537,8 @@ private fun SelectCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     label,
-                    style      = MaterialTheme.typography.titleMedium,
-                    color      = if (selected) Streak else MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (selected) Streak else MaterialTheme.colorScheme.onSurface,
                     fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold
                 )
                 if (description != null) {
@@ -571,7 +578,7 @@ private fun NumberSlider(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Baseline
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 label,
@@ -579,13 +586,13 @@ private fun NumberSlider(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(
-                verticalAlignment = Alignment.Baseline,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     value.toInt().toString(),
-                    style      = MaterialTheme.typography.displayMedium,
-                    color      = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Black
                 )
                 Text(
@@ -597,12 +604,12 @@ private fun NumberSlider(
         }
 
         Slider(
-            value         = value,
+            value = value,
             onValueChange = onValueChange,
-            valueRange    = range,
-            steps         = steps,
-            colors        = SliderDefaults.colors(
-                thumbColor       = Streak,
+            valueRange = range,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = Streak,
                 activeTrackColor = Streak,
             )
         )
