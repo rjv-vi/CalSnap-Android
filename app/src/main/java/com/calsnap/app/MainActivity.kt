@@ -48,9 +48,9 @@ class MainActivity : ComponentActivity() {
             splashScreen.setKeepOnScreenCondition { startDest == null }
 
             CalSnapTheme {
-                startDest?.let { dest ->
+                val dest = startDest
+                if (dest != null) {
                     val navController = rememberNavController()
-
                     NavHost(
                         navController = navController,
                         startDestination = dest
@@ -64,9 +64,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-
                         composable(Screen.Home.route) {
-                            PlaceholderScreen("🏠 Главный экран\n\nОнбординг завершён!")
+                            PlaceholderScreen("Главный экран - Онбординг завершён!")
                         }
                     }
                 }
@@ -102,12 +101,11 @@ class AppViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val dest = if (userRepository.isOnboardingDone()) {
+            _startDestination.value = if (userRepository.isOnboardingDone()) {
                 Screen.Home.route
             } else {
                 Screen.Onboarding.route
             }
-            _startDestination.value = dest
         }
     }
 }

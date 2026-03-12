@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,18 +84,12 @@ fun OnboardingScreen(
     ) {
         LinearProgressIndicator(
             progress = { (state.step + 1) / 6f },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp),
+            modifier = Modifier.fillMaxWidth().height(3.dp),
             color = Streak,
             trackColor = MaterialTheme.colorScheme.outline,
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 3.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(top = 3.dp)) {
             if (state.step > 0) {
                 IconButton(
                     onClick = { vm.prevStep() },
@@ -114,7 +108,8 @@ fun OnboardingScreen(
             AnimatedContent(
                 targetState = state.step,
                 transitionSpec = {
-                    if (targetState > initialState) {
+                    val forward = targetState > initialState
+                    if (forward) {
                         slideInHorizontally { it } + fadeIn() togetherWith
                                 slideOutHorizontally { -it } + fadeOut()
                     } else {
@@ -122,10 +117,8 @@ fun OnboardingScreen(
                                 slideOutHorizontally { it } + fadeOut()
                     }
                 },
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                label = "onboarding_step"
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                label = "step"
             ) { step ->
                 when (step) {
                     0 -> StepName(state, vm, onNext = { vm.nextStep() })
@@ -152,126 +145,75 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun StepName(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onNext: () -> Unit
-) {
+private fun StepName(state: OnboardingState, vm: OnboardingViewModel, onNext: () -> Unit) {
     val focus = LocalFocusManager.current
-
-    StepScaffold(
-        emoji = "👋",
-        title = "Как тебя зовут?",
-        subtitle = "Это поможет персонализировать CalSnap под тебя",
-        onNext = onNext
-    ) {
+    StepScaffold(emoji = "👋", title = "Как тебя зовут?",
+        subtitle = "Это поможет персонализировать CalSnap под тебя", onNext = onNext) {
         OutlinedTextField(
             value = state.name,
             onValueChange = { vm.setName(it) },
             placeholder = { Text("Твоё имя") },
             singleLine = true,
             isError = state.error != null,
-            supportingText = state.error?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+            supportingText = state.error?.let { err -> { Text(err, color = MaterialTheme.colorScheme.error) } },
             keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Done
+                capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(onDone = { focus.clearFocus(); onNext() }),
             shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Streak,
-                cursorColor = Streak
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak, cursorColor = Streak),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
         )
     }
 }
 
 @Composable
-private fun StepGenderDob(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onNext: () -> Unit
-) {
-    StepScaffold(
-        emoji = "🧬",
-        title = "Расскажи о себе",
-        subtitle = "Нужно для точного расчёта калорий",
-        onNext = onNext
-    ) {
+private fun StepGenderDob(state: OnboardingState, vm: OnboardingViewModel, onNext: () -> Unit) {
+    StepScaffold(emoji = "🧬", title = "Расскажи о себе",
+        subtitle = "Нужно для точного расчёта калорий", onNext = onNext) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                "Пол",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Text("Пол", style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Gender.entries.forEach { gender ->
-                    SelectCard(
-                        label = if (gender == Gender.MALE) "👨 Мужской" else "👩 Женский",
+                    SelectCardRow(
+                        label = if (gender == Gender.MALE) "Мужской" else "Женский",
                         selected = state.gender == gender,
-                        modifier = Modifier.weight(1f),
                         onClick = { vm.setGender(gender) }
                     )
                 }
             }
-
-            Text(
-                "Дата рождения",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
+            Text("Дата рождения", style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             var year by remember { mutableStateOf("") }
             var month by remember { mutableStateOf("") }
             var day by remember { mutableStateOf("") }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = day,
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(value = day,
                     onValueChange = { if (it.length <= 2) day = it.filter { c -> c.isDigit() } },
-                    placeholder = { Text("ДД") },
-                    singleLine = true,
+                    placeholder = { Text("ДД") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = month,
+                    modifier = Modifier.weight(1f))
+                OutlinedTextField(value = month,
                     onValueChange = { if (it.length <= 2) month = it.filter { c -> c.isDigit() } },
-                    placeholder = { Text("ММ") },
-                    singleLine = true,
+                    placeholder = { Text("ММ") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
-                    modifier = Modifier.weight(1f)
-                )
-                OutlinedTextField(
-                    value = year,
+                    modifier = Modifier.weight(1f))
+                OutlinedTextField(value = year,
                     onValueChange = { if (it.length <= 4) year = it.filter { c -> c.isDigit() } },
-                    placeholder = { Text("ГГГГ") },
-                    singleLine = true,
+                    placeholder = { Text("ГГГГ") }, singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Streak),
-                    modifier = Modifier.weight(2f)
-                )
+                    modifier = Modifier.weight(2f))
             }
-
             LaunchedEffect(day, month, year) {
                 if (day.length == 2 && month.length == 2 && year.length == 4) {
                     runCatching {
@@ -280,155 +222,80 @@ private fun StepGenderDob(
                     }
                 }
             }
-
             state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                Text(it, color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelMedium)
             }
         }
     }
 }
 
 @Composable
-private fun StepHeightWeight(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onNext: () -> Unit
-) {
-    StepScaffold(
-        emoji = "📏",
-        title = "Рост и вес",
-        subtitle = "Используется для расчёта BMR по формуле Миффлина-Сент-Жеора",
-        onNext = onNext
-    ) {
+private fun StepHeightWeight(state: OnboardingState, vm: OnboardingViewModel, onNext: () -> Unit) {
+    StepScaffold(emoji = "📏", title = "Рост и вес",
+        subtitle = "Используется для расчёта BMR по формуле Миффлина-Сент-Жеора", onNext = onNext) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NumberSlider(
-                label = "Рост",
-                value = state.heightCm,
-                unit = "см",
-                range = 140f..220f,
-                steps = 79,
-                onValueChange = { vm.setHeight(it) }
-            )
-            NumberSlider(
-                label = "Вес",
-                value = state.weightKg,
-                unit = "кг",
-                range = 40f..200f,
-                steps = 159,
-                onValueChange = { vm.setWeight(it) }
-            )
+            NumberSlider("Рост", state.heightCm, "см", 140f..220f, 79) { vm.setHeight(it) }
+            NumberSlider("Вес", state.weightKg, "кг", 40f..200f, 159) { vm.setWeight(it) }
         }
     }
 }
 
 @Composable
-private fun StepActivity(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onNext: () -> Unit
-) {
-    StepScaffold(
-        emoji = "🏃",
-        title = "Уровень активности",
-        subtitle = "Выбери тот, который лучше всего описывает твой обычный день",
-        onNext = onNext
-    ) {
+private fun StepActivity(state: OnboardingState, vm: OnboardingViewModel, onNext: () -> Unit) {
+    val descriptions = listOf(
+        "Работа за столом, почти нет прогулок",
+        "Лёгкие упражнения 1-3 раза в неделю",
+        "Умеренные нагрузки 3-5 раз в неделю",
+        "Интенсивные нагрузки 6-7 раз в неделю",
+        "Физическая работа или 2 тренировки в день"
+    )
+    StepScaffold(emoji = "🏃", title = "Уровень активности",
+        subtitle = "Выбери тот, который лучше всего описывает твой обычный день", onNext = onNext) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            val descriptions = listOf(
-                "Работа за столом, почти нет прогулок",
-                "Лёгкие упражнения 1-3 раза в неделю",
-                "Умеренные нагрузки 3-5 раз в неделю",
-                "Интенсивные нагрузки 6-7 раз в неделю",
-                "Физическая работа или 2 тренировки в день"
-            )
-            val emojis = listOf("🪑", "🚶", "🏋️", "🚴", "🔥")
-
             ActivityLevel.entries.forEachIndexed { i, level ->
-                SelectCard(
-                    label = "${emojis[i]} ${level.label}",
-                    description = descriptions[i],
-                    selected = state.activityLevel == level,
-                    onClick = { vm.setActivityLevel(level) }
-                )
+                SelectCard(label = level.label, description = descriptions[i],
+                    selected = state.activityLevel == level, onClick = { vm.setActivityLevel(level) })
             }
         }
     }
 }
 
 @Composable
-private fun StepGoal(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onNext: () -> Unit
-) {
-    StepScaffold(
-        emoji = "🎯",
-        title = "Твоя цель",
-        subtitle = "Мы скорректируем дневную норму калорий",
-        onNext = onNext
-    ) {
+private fun StepGoal(state: OnboardingState, vm: OnboardingViewModel, onNext: () -> Unit) {
+    val descriptions = listOf("Дефицит 500 ккал в день", "Равен твоему TDEE", "Профицит 300 ккал в день")
+    StepScaffold(emoji = "🎯", title = "Твоя цель",
+        subtitle = "Мы скорректируем дневную норму калорий", onNext = onNext) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val emojis = listOf("📉", "⚖️", "📈")
-            val descriptions = listOf(
-                "Дефицит 500 ккал в день",
-                "Равен твоему TDEE",
-                "Профицит 300 ккал в день"
-            )
-
             Goal.entries.forEachIndexed { i, goal ->
-                SelectCard(
-                    label = "${emojis[i]} ${goal.label}",
-                    description = descriptions[i],
-                    selected = state.goal == goal,
-                    onClick = { vm.setGoal(goal) }
-                )
+                SelectCard(label = goal.label, description = descriptions[i],
+                    selected = state.goal == goal, onClick = { vm.setGoal(goal) })
             }
         }
     }
 }
 
 @Composable
-private fun StepPreferences(
-    state: OnboardingState,
-    vm: OnboardingViewModel,
-    onFinish: () -> Unit
-) {
-    StepScaffold(
-        emoji = "✅",
-        title = "Пищевые предпочтения",
+private fun StepPreferences(state: OnboardingState, vm: OnboardingViewModel, onFinish: () -> Unit) {
+    StepScaffold(emoji = "✅", title = "Пищевые предпочтения",
         subtitle = "Необязательно — AI будет учитывать их при анализе",
-        nextLabel = "Начать! 🚀",
-        onNext = onFinish
-    ) {
+        nextLabel = "Начать!", onNext = onFinish) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            val prefs = DietPref.entries
-            val rows = prefs.chunked(2)
-            rows.forEach { row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
+            DietPref.entries.chunked(2).forEach { row ->
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     row.forEach { pref ->
                         FilterChip(
                             selected = pref in state.preferences,
@@ -450,23 +317,16 @@ private fun StepPreferences(
 
 @Composable
 private fun StepScaffold(
-    emoji: String,
-    title: String,
-    subtitle: String,
-    nextLabel: String = "Далее →",
-    onNext: () -> Unit,
+    emoji: String, title: String, subtitle: String,
+    nextLabel: String = "Далее", onNext: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 24.dp),
+        modifier = Modifier.fillMaxSize().padding(bottom = 24.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Column(
@@ -474,60 +334,36 @@ private fun StepScaffold(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(emoji, fontSize = 48.sp)
-                Text(
-                    title,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 20.sp
-                )
+                Text(title, style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onBackground)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 20.sp)
             }
             content()
         }
-
         Button(
             onClick = onNext,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(56.dp),
             shape = RoundedCornerShape(18.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Streak)
         ) {
-            Text(
-                nextLabel,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Text(nextLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
 private fun SelectCard(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    description: String? = null
+    label: String, selected: Boolean, onClick: () -> Unit,
+    modifier: Modifier = Modifier, description: String? = null
 ) {
-    val borderColor = if (selected) Streak else MaterialTheme.colorScheme.outline
-    val bgColor = if (selected) Streak.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
-
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = bgColor,
-        border = BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = borderColor
-        ),
-        tonalElevation = if (selected) 0.dp else 1.dp
+        color = if (selected) Streak.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(if (selected) 2.dp else 1.dp,
+            if (selected) Streak else MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -535,29 +371,19 @@ private fun SelectCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    label,
+                Text(label,
                     style = MaterialTheme.typography.titleMedium,
                     color = if (selected) Streak else MaterialTheme.colorScheme.onSurface,
-                    fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold
-                )
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold)
                 if (description != null) {
-                    Text(
-                        description,
-                        style = MaterialTheme.typography.bodyMedium,
+                    Text(description, style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
+                        modifier = Modifier.padding(top = 2.dp))
                 }
             }
             if (selected) {
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(Streak),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.size(22.dp).clip(CircleShape).background(Streak),
+                    contentAlignment = Alignment.Center) {
                     Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
@@ -566,52 +392,45 @@ private fun SelectCard(
 }
 
 @Composable
+private fun RowScope.SelectCardRow(label: String, selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.weight(1f),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) Streak.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+        border = BorderStroke(if (selected) 2.dp else 1.dp,
+            if (selected) Streak else MaterialTheme.colorScheme.outline),
+    ) {
+        Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
+            Text(label,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (selected) Streak else MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
 private fun NumberSlider(
-    label: String,
-    value: Float,
-    unit: String,
-    range: ClosedFloatingPointRange<Float>,
-    steps: Int,
+    label: String, value: Float, unit: String,
+    range: ClosedFloatingPointRange<Float>, steps: Int,
     onValueChange: (Float) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
+        Row(modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    value.toInt().toString(),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Black
-                )
-                Text(
-                    unit,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            verticalAlignment = Alignment.CenterVertically) {
+            Text(label, style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(value.toInt().toString(), style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Black)
+                Text(unit, style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = range,
-            steps = steps,
-            colors = SliderDefaults.colors(
-                thumbColor = Streak,
-                activeTrackColor = Streak,
-            )
-        )
+        Slider(value = value, onValueChange = onValueChange, valueRange = range, steps = steps,
+            colors = SliderDefaults.colors(thumbColor = Streak, activeTrackColor = Streak))
     }
 }
