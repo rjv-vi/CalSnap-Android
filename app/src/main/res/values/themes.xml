@@ -6,10 +6,9 @@
         <item name="postSplashScreenTheme">@style/Theme.CalSnap.Main</item>
     </style>
 
-    <style name="Theme.CalSnap.Main" parent="android:Theme.Material.NoTitleBar.Fullscreen">
+    <style name="Theme.CalSnap.Main" parent="android:Theme.Black.NoTitleBar">
         <item name="android:windowBackground">#111110</item>
         <item name="android:statusBarColor">#00000000</item>
         <item name="android:navigationBarColor">#00000000</item>
-        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>
